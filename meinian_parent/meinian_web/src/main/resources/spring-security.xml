@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                  http://www.springframework.org/schema/beans/spring-beans.xsd
+                  http://www.springframework.org/schema/mvc
+                  http://www.springframework.org/schema/mvc/spring-mvc.xsd
+                  http://code.alibabatech.com/schema/dubbo
+                  http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+                  http://www.springframework.org/schema/context
+                  http://www.springframework.org/schema/context/spring-context.xsd
+                          http://www.springframework.org/schema/security
+                          http://www.springframework.org/schema/security/spring-security.xsd">
+
+
+    <!--放行静态资源-->
+    <security:http security="none" pattern="/js/**"></security:http>
+    <security:http security="none" pattern="/css/**"></security:http>
+    <security:http security="none" pattern="/img/**"></security:http>
+    <security:http security="none" pattern="/plugins/**"></security:http>
+    <security:http security="none" pattern="/login.html"></security:http>
+    <security:global-method-security pre-post-annotations="enabled" />
+    <!--安全框架
+    认证：登录
+    授权：授予权限，不同的人登录，权限不一样
+    auto-config="true":开启自动配置，系统默认会有一个登录页面，需要进行开启
+    use-expressions="true"：开启表达式 ，表达式必须ROLE_开头
+    intercept-url:拦截地址
+    pattern="/**":表示拦截所有的地址
+    access="hasRole('ROLE_ADMIN')":如果你的角色是管理员，可以直接登录
+    -->
+    <security:http auto-config="true" use-expressions="true">
+        <security:headers>
+            <!--设置在页面可以通过iframe访问受保护的页面，默认为不允许访问-->
+            <security:frame-options policy="SAMEORIGIN"></security:frame-options>
+        </security:headers>
+        <security:intercept-url pattern="/pages/**"  access="isAuthenticated()"></security:intercept-url>
+        <!--isAuthenticated：表示认证通过-->
+        <!--自定义表单页面
+        login-page="/login.html":指定登录页面
+        username-parameter="username"：表示用户名
+        login-processing-url="/login.do"：表示提交的地址
+        default-target-url="/index.html"：表示登录成功页面
+        authentication-failure-url="/login.html":表示登录失败，重新进入登录页面
+        always-use-default-target="true"：表示登录成功，总是进入到成功的页面
+        -->
+        <security:form-login login-page="/login.html"
+                             username-parameter="username"
+                             password-parameter="password"
+                             login-processing-url="/login.do"
+                             default-target-url="/pages/main.html"
+                             authentication-failure-url="/login.html"
+                             always-use-default-target="true"></security:form-login>
+
+        <!--关闭CSRF-->
+        <security:csrf disabled="true"></security:csrf>
+
+
+        <!--配置退出功能
+        logout-url="/logout.do":表示退出请求的地址
+        logout-success-url="/login.html":登录成功请求的页面
+        invalidate-session="true":设置sesssion失效
+        -->
+        <security:logout logout-url="/logout.do" logout-success-url="/login.html"
+                         invalidate-session="true"></security:logout>
+
+    </security:http>
+
+
+    <!--认证
+    authentication-manager:认证管理器
+    authentication-provider:认证提供者
+    user-service:用户服务
+    -->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="springSecurityUserService">
+            <security:password-encoder ref="passwordEncoder"></security:password-encoder>
+        </security:authentication-provider>
+    </security:authentication-manager>
+
+
+    <mvc:annotation-driven></mvc:annotation-driven>
+    <!--配置密码加密对象-->
+    <bean id="passwordEncoder"
+          class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" />
+</beans>
